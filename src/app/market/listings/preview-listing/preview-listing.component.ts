@@ -1,10 +1,9 @@
 import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material';
 
-import { MarketStateService } from 'app/core/market/market-state/market-state.service';
-
 import { CartService } from 'app/core/market/api/cart/cart.service';
 import { FavoritesService } from 'app/core/market/api/favorites/favorites.service';
+import { ListingService } from 'app/core/market/api/listing/listing.service';
 
 @Component({
   selector: 'app-preview-listing',
@@ -19,14 +18,12 @@ export class PreviewListingComponent implements OnInit, OnDestroy {
   public pictures: Array<any> = new Array();
   public price: any;
   public date: string;
-
-  private currencyprice: number = 0;
+  private showAddToCart: boolean = false;
 
   constructor(
     private dialogRef: MatDialogRef<PreviewListingComponent>,
     private cartService: CartService,
     private favoritesService: FavoritesService,
-    private marketState: MarketStateService,
     @Inject(MAT_DIALOG_DATA) public data: any) {
   }
 
@@ -37,6 +34,8 @@ export class PreviewListingComponent implements OnInit, OnDestroy {
       }));
     });
 
+
+    
     let itemPrice = this.data.listing.object.PaymentInformation.ItemPrice;
     if (itemPrice && itemPrice.basePrice) {
       itemPrice = itemPrice.basePrice;
@@ -44,18 +43,14 @@ export class PreviewListingComponent implements OnInit, OnDestroy {
         int:     itemPrice.toFixed(0),
         cents:  (itemPrice % 1).toFixed(8),
         escrow: (itemPrice * this.data.listing.object.PaymentInformation.Escrow.Ratio.buyer / 100).toFixed(8),
-        usd: +(itemPrice * +this.currencyprice.toFixed(2))
+        usd: (itemPrice * ListingService.currencyPrice).toFixed(2)
       };
     }
 
+    if(!this.data.listing.object.ListingItemTemplate.hash)
+      this.showAddToCart = true;
 
     this.date = new Date(this.data.listing.object.createdAt).toLocaleDateString();
-
-    this.marketState.observe('currencyprice')
-      .takeWhile(() => !this.destroyed)
-      .subscribe(price => {
-        this.currencyprice = price[0].price;
-      });
   }
 
   addToCart(id: number) {
