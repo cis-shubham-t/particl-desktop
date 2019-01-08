@@ -1,0 +1,5 @@
+const addData = { }
+
+export {
+  addData
+}
